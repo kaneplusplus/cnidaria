@@ -1,0 +1,33 @@
+Package: cnidaria
+Type: Package
+Title: Distributed framework for R
+Version: 0.1
+Date: 2013-05-14
+Author: Michael J. Kane and Bryan W. Lewis
+Maintainer: Michael Kane <kaneplusplus@gmail.com>
+Description: This package provides a framework for distributed computing as
+    well as distributed versions of commonly used R data structures.
+    structures.
+License: ALv2
+Depends:
+    Rcpp (>= 0.10.3),
+    rredis,
+    methods,
+    foreach,
+    itertools,
+    rzmq (>= 0.6.6),
+LinkingTo: Rcpp
+Collate:
+    'block.data.structure.r'
+    'block.vector.r'
+    'local.block.vector.r'
+    'block.data.frame.r'
+    'RcppExports.R'
+    'util.r'
+    'worker.r'
+    'dist.vector.r'
+    'dist.worker.r'
+    'block.matrix.r'
+    'dist.data.frame.r'
+    'dist.matrix.r'
+    'channel.r'
