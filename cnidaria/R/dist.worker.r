@@ -2,7 +2,7 @@ require(rzmq)
 require(rredis)
 
 dist.worker.init <- function(qid=guid(), allq="all", host="localhost",
-  port=6379, zmqAddress="tcp://127.0.0.1") {
+  port=6379, zmqAddress="tcp://*") {
   if (!(".dist.env" %in% names(options()))) {
     if (is.null(qid))
       qid <- guid()
@@ -78,6 +78,7 @@ pull.character <- function(w, expr) {
       ret <- zmqChannel(retResource, bind.socket, "ZMQ_PULL")
       packet <- list(type="pull", expr=expr, retq=retResource)
     }
+    print(packet)
     cluster.write(w, packet)
   }
   ret
@@ -162,7 +163,6 @@ service <- function(redisAggQ=get.raq(), w=get.local.con(), log=stdout(),
         cat("sending return on channel", msg$retq, "\n")
         channel <- zmqChannel(msg$retq, connect.socket, "ZMQ_PUSH")
         send(channel, r)
-        cat("return sent")
       } 
     }
   } else if (msg$type == "push") {

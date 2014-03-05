@@ -2,8 +2,7 @@ require(cnidaria)
 require(testthat)
 
 # hadoop17
-#cnidaria:::dist.worker.init(zmqAddress="tcp://135.207.240.57")
-cnidaria:::dist.worker.init()
+cnidaria:::dist.worker.init(zmqAddress="tcp://127.0.0.1")
 constructor <- dist.vector
 
 # 

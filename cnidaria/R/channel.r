@@ -73,13 +73,15 @@ zmqChannel <- function(resource, con=bind.socket, comType="ZMQ_PUSH",
     stop("Broadcasting for rzmq channels has not been implemented yet.") 
   context <- get.zmq.context()
   socket <- init.socket(context, comType)
-#  if (!con(socket, resource)) {
-#    ret <- NULL
-#  } else {
-#    set.linger(socket, as.integer(0))
+  #zmqAddress <- paste(get.zmq.address(), ":", $resource, sep="")
+  if (!con(socket, resource)) {
+    ret <- NULL
+  } else {
+    set.linger(socket, as.integer(0))
     ret <- list(socket=socket)
     class(ret) <- c("zmqChannel", "channel")
-#  }
+  }
+  Sys.sleep(0.5)
   ret
 }
 

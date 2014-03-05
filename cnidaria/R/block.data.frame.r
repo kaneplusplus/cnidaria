@@ -17,7 +17,7 @@ ibdf <- function(x, ...) {
 #' @name block.data.frame-class
 #' @rdname block.data.frame-class
 #' @exportClass block.data.frame
-setClass("block.data.frame")#, contains="block.data.structure")
+setClass("block.data.frame") #, contains="block.data.structure")
 
 # TODO: Add numeric indexing and implement ibdf. The way it's done here is
 # too slow.
