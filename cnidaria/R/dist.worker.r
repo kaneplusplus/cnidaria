@@ -1,5 +1,6 @@
 require(rzmq)
 require(rredis)
+require(parallel)
 
 dist.worker.init <- function(qid=guid(), allq="all", host="localhost",
   port=6379, zmqAddress="tcp://127.0.0.1") {
@@ -146,24 +147,30 @@ service <- function(redisAggQ=get.raq(), w=get.local.con(), log=stdout(),
   }
   if (msg$type == "pull") {
     #print(msg)
-    r <- try(pull(w, msg$expr))
-    if (inherits(r, "try-error")) {
-      warning("Problem with pull: Trying again")
+    multicore::mcparallel({
       r <- try(pull(w, msg$expr))
-    }
-    if (p2p == "redis") {
-      if (!is.null(msg$retq)) {
-        redisLPush(msg$retq, r)
+      if (inherits(r, "try-error")) {
+        warning("Problem with pull: Trying again")
+        r <- try(pull(w, msg$expr))
       }
-      else
-        pull(w, msg$expr)
-    } else if (p2p == "zeromq") {
-      if (!is.null(msg$retq)) {
-        cat("sending return on channel", msg$retq, "\n")
-        channel <- zmqChannel(msg$retq, connect.socket, "ZMQ_PUSH")
-        send(channel, r)
-      } 
-    }
+      if (p2p == "redis") {
+        if (!is.null(msg$retq)) {
+          redisLPush(msg$retq, r)
+        }
+        else
+          pull(w, msg$expr)
+      } else if (p2p == "zeromq") {
+        if (!is.null(msg$retq)) {
+          # zmq contexts don't fork well. Creat a new one.
+          #de <- options()$.dist.env
+          #de$zmqContext <- init.context()
+          #options(.dist.env=de)
+          cat("sending return on channel", msg$retq, "\n")
+          channel <- zmqChannel(msg$retq, connect.socket, "ZMQ_PUSH")
+          send(channel, r)
+        } 
+      }
+    }, estrange=TRUE)
   } else if (msg$type == "push") {
     push(w, msg$expr, msg$resourceName)
     channel <- zmqChannel(msg$retq, connect.socket, "ZMQ_PUSH")

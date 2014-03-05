@@ -17,17 +17,3 @@ Depends:
     itertools,
     rzmq (>= 0.6.6),
 LinkingTo: Rcpp
-Collate:
-    'block.data.structure.r'
-    'block.vector.r'
-    'local.block.vector.r'
-    'block.data.frame.r'
-    'RcppExports.R'
-    'util.r'
-    'worker.r'
-    'dist.vector.r'
-    'dist.worker.r'
-    'block.matrix.r'
-    'dist.data.frame.r'
-    'dist.matrix.r'
-    'channel.r'
