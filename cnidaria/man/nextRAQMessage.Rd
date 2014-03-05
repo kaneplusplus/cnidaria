@@ -2,7 +2,7 @@
 \alias{nextRAQMessage}
 \title{Block for the next message on the redis aggregate queue}
 \usage{
-  nextRAQMessage(raq, timeout)
+nextRAQMessage(raq, timeout)
 }
 \arguments{
   \item{raq}{The redis aggregate queue}
@@ -11,9 +11,9 @@
   message}
 }
 \value{
-  NULL if the timeout is reached otherwise the next message
+NULL if the timeout is reached otherwise the next message
 }
 \description{
-  Block for the next message on the redis aggregate queue
+Block for the next message on the redis aggregate queue
 }
 

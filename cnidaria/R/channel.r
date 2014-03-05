@@ -27,7 +27,7 @@ localChannel <- function(expr, type, resultHandle=NULL) {
   # TODO: return a future object.
   # type needs to be push or pull.
   if (type == "pull") {
-    ret <- multicore::mcparallel(pull(get.local.con(), expr))
+    ret <- pull(get.local.con(), expr)
   }
   else if (type == "push") {
     if (is.null(resultHandle))
@@ -44,9 +44,7 @@ localChannel <- function(expr, type, resultHandle=NULL) {
 
 #' @export
 recv.localChannel <- function(channel) {
-  ret <- collect(channel$ret)
-  names(ret) <- NULL
-  ret
+  channel$ret
 #  serviceAll()
 #  ret <- NULL
 #  if (channel$type == "pull")
@@ -75,14 +73,13 @@ zmqChannel <- function(resource, con=bind.socket, comType="ZMQ_PUSH",
     stop("Broadcasting for rzmq channels has not been implemented yet.") 
   context <- get.zmq.context()
   socket <- init.socket(context, comType)
-  #zmqAddress <- paste(get.zmq.address(), ":", $resource, sep="")
-  #if (!con(socket, resource)) {
-  #  ret <- NULL
-  #} else {
-    set.linger(socket, as.integer(0))
+#  if (!con(socket, resource)) {
+#    ret <- NULL
+#  } else {
+#    set.linger(socket, as.integer(0))
     ret <- list(socket=socket)
     class(ret) <- c("zmqChannel", "channel")
-  #}
+#  }
   ret
 }
 

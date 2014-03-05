@@ -1,7 +1,7 @@
 require(cnidaria)
 #options(error=recover)
 #cnidaria:::dist.worker.init(host="135.207.240.57", zmqAddress="135.207.240.65")
-cnidaria:::dist.worker.init(host="localhost", zmqAddress="127.0.0.1")
+cnidaria:::dist.worker.init()
 while(1) {
   ret <- service()
   if (!ret)

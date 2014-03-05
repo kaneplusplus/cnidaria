@@ -15,5 +15,5 @@ Depends:
     methods,
     foreach,
     itertools,
-    rzmq (>= 0.6.6),
+    rzmq (>= 0.6.6)
 LinkingTo: Rcpp

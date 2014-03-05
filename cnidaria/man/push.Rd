@@ -2,7 +2,7 @@
 \alias{push}
 \title{Push an expression to a worker and create a new block.}
 \usage{
-  push(w, expr, resultHandle)
+push(w, expr, resultHandle)
 }
 \arguments{
   \item{w}{The worker to push the expression to.}
@@ -12,6 +12,6 @@
   an character expression, with push you cannot do this.}
 }
 \description{
-  Push an expression to a worker and create a new block.
+Push an expression to a worker and create a new block.
 }
 

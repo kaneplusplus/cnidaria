@@ -2,7 +2,7 @@
 \alias{distribute.vector}
 \title{Create a distributed vector from a native R vector}
 \usage{
-  distribute.vector(vec, block.size = 1000)
+distribute.vector(vec, block.size = 1000)
 }
 \arguments{
   \item{vec}{The vector to distribute}
@@ -14,10 +14,10 @@
   create}
 }
 \value{
-  a new dist.vector object
+a new dist.vector object
 }
 \description{
-  This function allows you to easily create new distributed
-  vectors from a local one.
+This function allows you to easily create new distributed
+vectors from a local one.
 }
 

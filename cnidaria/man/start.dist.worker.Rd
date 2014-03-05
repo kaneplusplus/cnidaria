@@ -2,10 +2,9 @@
 \alias{start.dist.worker}
 \title{Start distributed workers}
 \usage{
-  start.dist.worker(workerq = guid(), allq = "all",
-    host = "localhost", port = 6379, log = stdout(),
-    verbosity = 1,
-    rbin = paste(R.home(component = "bin"), "R", sep = "/"))
+\method{start}{dist.worker}(workerq = guid(), allq = "all",
+  host = "localhost", port = 6379, log = stdout(), verbosity = 1,
+  rbin = paste(R.home(component = "bin"), "R", sep = "/"))
 }
 \arguments{
   \item{workerq}{A unique character identifier for each
@@ -26,8 +25,8 @@
   \item{rbin}{The R binary run the workers with.}
 }
 \description{
-  The start.dist.worker function starts a specified number
-  of distributed workers on the local machine as separate
-  processes.
+The start.dist.worker function starts a specified number of
+distributed workers on the local machine as separate
+processes.
 }
 

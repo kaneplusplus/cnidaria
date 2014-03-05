@@ -2,8 +2,8 @@
 \alias{run.dist.worker}
 \title{Run a worker}
 \usage{
-  run.dist.worker(workerq, allq, host = "localhost",
-    port = 6379, log = stdout(), verbosity = 1)
+run.dist.worker(workerq, allq, host = "localhost", port = 6379,
+  log = stdout(), verbosity = 1)
 }
 \arguments{
   \item{workerq}{A unique identifier for the worker.}
@@ -16,11 +16,10 @@
   everything. Defaults to 1}
 }
 \value{
-  TRUE If a request was serviced FALSE otherwise
+TRUE If a request was serviced FALSE otherwise
 }
 \description{
-  The run.redis.worker function sets up the redis aggregate
-  queue, sets up the worker, and services tasks
-  indefinitely.
+The run.redis.worker function sets up the redis aggregate
+queue, sets up the worker, and services tasks indefinitely.
 }
 
