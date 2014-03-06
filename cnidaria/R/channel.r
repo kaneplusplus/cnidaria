@@ -45,7 +45,6 @@ localChannel <- function(expr, type, resultHandle=NULL) {
 #' @export
 recv.localChannel <- function(channel) {
   channel$ret
-#  serviceAll()
 #  ret <- NULL
 #  if (channel$type == "pull")
 #    ret <- pull(get.local.con(), channel$expr)
@@ -95,8 +94,8 @@ send.zmqChannel <- function(channel, packet) {
 
 #' @export
 recv.zmqChannel <- function(channel) {
-  # TODO: fix this so that it polls and times out.
-  numTries <- 100
+  # Adjust the number of tries to deal with recursive calls to the cluster.
+  numTries <- 30
   haveResp <- FALSE
   for (i in 1:numTries) {
     if (poll.socket(list(channel$socket), list("read"), timeout=0L)[[1]]$read) {
@@ -105,7 +104,7 @@ recv.zmqChannel <- function(channel) {
     }
     #serviceAll(timeout=0.1)
     service(timeout=0)
-    Sys.sleep(0.1)
+    Sys.sleep(0.2)
   }
   if (!haveResp)
     stop("No response found")

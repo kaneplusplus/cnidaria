@@ -2,7 +2,7 @@ require(rzmq)
 require(rredis)
 
 dist.worker.init <- function(qid=guid(), allq="all", host="localhost",
-  port=6379, zmqAddress="tcp://*") {
+  port=6379, zmqAddress="tcp://127.0.0.1") {
   if (!(".dist.env" %in% names(options()))) {
     if (is.null(qid))
       qid <- guid()
@@ -72,13 +72,22 @@ pull.character <- function(w, expr) {
   } else {
     #retResource <- paste("tcp://localhost:", cnidaria:::guid(), sep="")
     ret <- NULL
-    while(is.null(ret)) {
+    tries <- 4
+    try <- 0
+    while(is.null(ret) && try < tries) {
       retResource <- paste(get.zmq.address(), ":",
         as.character(sample(100000, 1)+100000), sep="")
       #ret <- zmqChannel(retResource, bind.socket, "ZMQ_PULL")
       ret <- zmqChannel(retResource, bind.socket, "ZMQ_REP")
-      packet <- list(type="pull", expr=expr, retq=retResource)
+      if (is.null(ret)) {
+        try <- try + 1
+        Sys.sleep(0.1)
+      }
     }
+    if (is.null(ret)) {
+      stop("pull was unsuccessful")
+    }
+    packet <- list(type="pull", expr=expr, retq=retResource)
     print(packet)
     cluster.write(w, packet)
   }
@@ -100,10 +109,19 @@ push.character <- function(w, expr, resultHandle=guid()) {
     # Otherwise, push it out to be consumed on the cluster.
     ret <- NULL
     retq <- NULL
-    while (is.null(ret)) {
+    tries <- 4
+    try <- 0
+    while (is.null(ret) && try < tries) {
       retq <- paste(get.zmq.address(), ":",
             as.character(sample(100000, 1)+100000), sep="")
       ret <- zmqChannel(retq, bind.socket, "ZMQ_REP")
+      if (is.null(ret)) {
+        try <- try + 1
+        Sys.sleep(0.1)
+      } 
+    }
+    if (is.null(ret)) {
+      stop("push was unsuccessful")
     }
     packet <- list(type="push", expr=expr, resourceName=resultHandle, retq=retq)
     cluster.write(w, packet)
@@ -141,7 +159,7 @@ serviceAll <- function(redisAggQ=get.raq(), w=get.local.con(), log=stdout(),
 #' @return TRUE If a request was serviced FALSE otherwise
 #' @export
 service <- function(redisAggQ=get.raq(), w=get.local.con(), log=stdout(), 
-  verbosity=1, p2p="zeromq", timeout=10, tries=3, pause=1) {
+  verbosity=1, p2p="zeromq", timeout=10, tries=3, pause=0.2) {
   packet <- nextRAQMessage(redisAggQ, timeout)
   if (length(packet) == 0) {
     return(FALSE)

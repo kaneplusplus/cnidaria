@@ -3,7 +3,7 @@
 \title{Service a task from a coordinator}
 \usage{
 service(redisAggQ = get.raq(), w = get.local.con(), log = stdout(),
-  verbosity = 1, p2p = "zeromq", timeout = 10, tries = 3, pause = 1)
+  verbosity = 1, p2p = "zeromq", timeout = 10, tries = 3, pause = 0.2)
 }
 \arguments{
   \item{redisAggQ}{The redis aggregate queue}
