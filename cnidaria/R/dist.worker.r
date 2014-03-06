@@ -74,8 +74,9 @@ pull.character <- function(w, expr) {
     ret <- NULL
     while(is.null(ret)) {
       retResource <- paste(get.zmq.address(), ":",
-        as.character(sample(100000, 1)+10000), sep="")
-      ret <- zmqChannel(retResource, bind.socket, "ZMQ_PULL")
+        as.character(sample(100000, 1)+100000), sep="")
+      #ret <- zmqChannel(retResource, bind.socket, "ZMQ_PULL")
+      ret <- zmqChannel(retResource, bind.socket, "ZMQ_REP")
       packet <- list(type="pull", expr=expr, retq=retResource)
     }
     print(packet)
@@ -97,12 +98,16 @@ push.character <- function(w, expr, resultHandle=guid()) {
     ret <- localChannel(expr, "push", resultHandle)
   } else {
     # Otherwise, push it out to be consumed on the cluster.
-    retq <- paste(get.zmq.address(), ":",
-          as.character(sample(100000, 1)+10000), sep="")
-    packet <- list(type="push", expr=expr, resourceName=resultHandle,
-      retq=retq)
+    ret <- NULL
+    retq <- NULL
+    while (is.null(ret)) {
+      retq <- paste(get.zmq.address(), ":",
+            as.character(sample(100000, 1)+100000), sep="")
+      ret <- zmqChannel(retq, bind.socket, "ZMQ_REP")
+    }
+    packet <- list(type="push", expr=expr, resourceName=resultHandle, retq=retq)
     cluster.write(w, packet)
-    ret <- zmqChannel(retq, bind.socket, "ZMQ_PULL")
+    #ret <- zmqChannel(retq, bind.socket, "ZMQ_PULL")
   }
   ret
 }
@@ -131,10 +136,12 @@ serviceAll <- function(redisAggQ=get.raq(), w=get.local.con(), log=stdout(),
 #' @param verbosity 0, 1, 2 to log nothing, errors, or everything. Defaults to
 #' @param timeout how long should we wait on redis to return something?
 #' 1.
+#' @param tries how many times should we try to connect to the return endpoint?
+#' @param pause how long should we pause between tries?
 #' @return TRUE If a request was serviced FALSE otherwise
 #' @export
 service <- function(redisAggQ=get.raq(), w=get.local.con(), log=stdout(), 
-  verbosity=1, p2p="zeromq", timeout=10) {
+  verbosity=1, p2p="zeromq", timeout=10, tries=3, pause=1) {
   packet <- nextRAQMessage(redisAggQ, timeout)
   if (length(packet) == 0) {
     return(FALSE)
@@ -152,23 +159,47 @@ service <- function(redisAggQ=get.raq(), w=get.local.con(), log=stdout(),
       warning("Problem with pull: Trying again")
       r <- try(pull(w, msg$expr))
     }
-    if (p2p == "redis") {
-      if (!is.null(msg$retq)) {
-        redisLPush(msg$retq, r)
+    if (!is.null(msg$retq)) {
+      cat("sending return on channel", msg$retq, "\n")
+      channel <- NULL
+      try <- 0
+      while (is.null(channel) && try < tries) {
+        #channel <- zmqChannel(msg$retq, connect.socket, "ZMQ_PUSH")
+        channel <- zmqChannel(msg$retq, connect.socket, "ZMQ_REQ")
+        if (is.null(channel)) {
+          warning("couldn't connect to channel")
+          print(msg)
+          try <- try + 1
+          Sys.sleep(pause)
+        }
       }
-      else
-        pull(w, msg$expr)
-    } else if (p2p == "zeromq") {
-      if (!is.null(msg$retq)) {
-        cat("sending return on channel", msg$retq, "\n")
-        channel <- zmqChannel(msg$retq, connect.socket, "ZMQ_PUSH")
+      if (try == tries || is.null(channel)) {
+        warning("Failed to service request")
+        return(FALSE)
+      } else {
         send(channel, r)
-      } 
-    }
+      }
+    } 
   } else if (msg$type == "push") {
     push(w, msg$expr, msg$resourceName)
-    channel <- zmqChannel(msg$retq, connect.socket, "ZMQ_PUSH")
-    send(channel, msg$resourceName)
+    channel <- NULL
+    try <- 0
+    while (is.null(channel) && try < tries) {
+      #channel <- zmqChannel(msg$retq, connect.socket, "ZMQ_PUSH")
+      channel <- zmqChannel(msg$retq, connect.socket, "ZMQ_REQ")
+      if (is.null(channel)) {
+        warning("couldn't connect to channel")
+        print(msg)
+        try <- try + 1
+        Sys.sleep(pause)
+      }
+    }
+    if (try == tries || is.null(channel)) {
+      warning("Failed to service request")
+      return(FALSE)
+    } else {
+      send(channel, msg$resourceName)
+    }
     #if (verbosity > 1) 
     #  cat("Resource", newResource, "created \n", file=log)
     #cluster.write(msg$retq, msg$retq)

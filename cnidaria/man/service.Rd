@@ -3,7 +3,7 @@
 \title{Service a task from a coordinator}
 \usage{
 service(redisAggQ = get.raq(), w = get.local.con(), log = stdout(),
-  verbosity = 1, p2p = "zeromq", timeout = 10)
+  verbosity = 1, p2p = "zeromq", timeout = 10, tries = 3, pause = 1)
 }
 \arguments{
   \item{redisAggQ}{The redis aggregate queue}
@@ -17,6 +17,11 @@ service(redisAggQ = get.raq(), w = get.local.con(), log = stdout(),
 
   \item{timeout}{how long should we wait on redis to return
   something? 1.}
+
+  \item{tries}{how many times should we try to connect to
+  the return endpoint?}
+
+  \item{pause}{how long should we pause between tries?}
 }
 \value{
 TRUE If a request was serviced FALSE otherwise
