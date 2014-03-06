@@ -81,7 +81,10 @@ zmqChannel <- function(resource, con=bind.socket, comType="ZMQ_PUSH",
     ret <- list(socket=socket)
     class(ret) <- c("zmqChannel", "channel")
   }
-  Sys.sleep(0.5)
+  # This sucks but we have to give the socket a chance to actually be created.
+  # It would be better if it didn't return until it is actually bound to
+  # the socket.
+  Sys.sleep(0.1)
   ret
 }
 
