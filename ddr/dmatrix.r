@@ -14,10 +14,13 @@ dmatrix = function(l, chunk_constructor) {
   
   start_row = sapply(l, function(x) x[[1]][1])
   start_col = sapply(l, function(x) x[[1]][2])
-  end_row = start_row + sapply(l, function(x) nrow(x[[2]])) - 1
-  end_col = start_col + sapply(l, function(x) ncol(x[[2]])) - 1
+  num_rows = sapply(l, function(x) nrow(x[[2]]))
+  num_cols = sapply(l, function(x) ncol(x[[2]]))
+  end_row = start_row + num_rows - 1
+  end_col = start_col + num_cols - 1
   ret = list(chunks=lapply(l, function(x) as_chunk(x[[2]], chunk_constructor)),
-             chunk_locs=cbind(start_row, end_row, start_col, end_col))
+             chunk_locs=cbind(start_row, end_row, start_col, end_col,
+                              num_rows, num_cols))
   class(ret) = c("dmatrix", class(ret))
   ret
 }
@@ -37,27 +40,45 @@ dim.dmatrix = function(x) {
           x$chunk_locs[i, "start_col"]:x$chunk_locs[i, "end_col"]] = 
         get_values(x$chunks[[i]])
     }
-    ret
-  } else if (missing(i) & !missing(j)) {
+    return(ret)
+  } 
+  
+  if (missing(i) & !missing(j)) {
+    # For now we'll just fill in j.
+    j = 1:ncol(x)
   } else if (!missing(i) & missing(j)) {
-  } else if (!missing(i) & !missing(j)) {
+    # For now we'll just fill in i.
+    i = 1:row(x)
+  } 
+
+  if (!missing(i) & !missing(j)) {
+    ret = matrix( NA, nrow=length(unique(i)), ncol=length(unique(j)) )
+    if (!is.null(nrow(x)))
+      rownames(ret) = rownames(x)[i]
+    if (!is.null(colnames(x)))
+      colnames(ret) = colnames(x)[j]
+
+    ret_vals = convert_coord2d(x$chunk_locs, i, j)
+    if (any(ret_vals[,"i"] > nrow(ret)) || any(ret_vals[,"j"] > ncol(ret)))
+      stop("subscript out of bounds")
+
+    # We'll use 1-dimensional indexing based on the ret_vals.
+    
+    # Get the number of rows for each chunk in ret_vals.
+    ret_vals = cbind(ret_vals, 
+      ret_vals[,"i"] + length(i)*(ret_vals[,"j"]-1),
+      ret_vals[,"rel_i"] + 
+        x$chunk_locs[ret_vals[,"chunk"],"num_rows"]*(ret_vals[,"rel_j"]-1))
+    colnames(ret_vals)[c(6,7)] = c("offset", "rel_offset")
+    for(chunk_num in unique(ret_vals[,"chunk"])) {
+      chunk_rows = which(ret_vals[,"chunk"] == chunk_num)
+      ret[ret_vals[chunk_rows,"offset"]] = 
+        get_values(x$chunks[[chunk_num]], ret_vals[chunk_rows, "rel_offset"])
+    }
+    ret
   } else {
     stop("Parameters not supported yet")
-  }
+  } 
   ret
 }
 
-source("disk-chunk.r")
-
-# We'll use doSEQ as a parallel execution engine.
-library(foreach)
-registerDoSEQ()
-
-init_ddr_disk_chunk()
-
-# Chunks for an irregular matrix.
-l = list(list(c(1, 1), matrix(rnorm(25), nrow=5, ncol=5)),
-         list(c(1, 6), matrix(rnorm(36), nrow=6, ncol=6)),
-         list(c(6, 1), matrix(rnorm(5), ncol=5, nrow=1)))
-
-dm = dmatrix(l)
