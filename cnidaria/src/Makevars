@@ -1,4 +1,0 @@
-PKG_LIBS += `$(R_HOME)/bin/Rscript -e "Rcpp:::LdFlags()"`
-PKG_LIBS += -lhiredis
-
-PKG_CPPFLAGS += -Wall -std=c++11
