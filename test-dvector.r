@@ -5,19 +5,28 @@ source("disk-chunk.r")
 library(foreach)
 registerDoSEQ()
 
-# We'll test the distributed vector.
+# Test the distributed vector.
 source("dvector.r")
 
+# Initialize disk chunking.
 init_ddr_disk_chunk()
 
+# Create the vector.
 dv = dvector(list(rnorm(10), rnorm(20), rnorm(15)))
+class(dv)
 
+# Sample a few element positions.
 inds = sample.int(length(dv), 10, replace=TRUE)
 
+# Emerge the vector at the specified indices and see if it's
+# the same same as emerging the entire vector and then
+# subsetting by indices.
 any(dv[inds] != dv[][inds])
 
+# Add one to each element of the vector.
 dv2 = dv + 1
 
+# Make sure it's the same as emerging dv and then adding 1.
 any(dv2[] != (dv+1)[])
 
 
