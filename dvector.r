@@ -5,25 +5,22 @@ source("convert-indices.r")
 
 setClass('dvector', representation(e='environment'))
 
+dvector = function(parts, lengths) {
+  e = new.env(parent=emptyenv())
+  assign('parts', parts, envir=e)
+  assign('lengths', lengths, envir=e)
+  assign('length', sum(lengths), envir=e)
+  new('dvector', e=e)
+}
+
 # TODO: Add code to make sure factors levels are normalized across
 # the passed vectors.
-dvector = function(l, part_constructor) {
+dvector_from_vectors = function(l, part_constructor) {
   if (missing(part_constructor)) 
     part_constructor = options()$default_part_constructor
   if (any(!sapply(l, is.vector))) 
     stop("All supplied objects must be vectors.")
-
-  lens = sapply(l, length)
-  len = sum(lens)
-  e = new.env(parent=emptyenv())
-  assign("parts", lapply(l, as_part, part_constructor), envir=e)
-  assign("length", len, envir=e)
-  assign("lengths", lens, envir=e)
-  new('dvector', e=e)
-#  ret = list(parts=lapply(l, as_part, part_constructor), 
-#             length=len, lengths=lens)
-#  class(ret) = c("dvector", class(ret))
-#  ret
+  dvector(lapply(l, as_part, part_constructor), sapply(l, length))
 }
 
 setMethod("[",

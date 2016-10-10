@@ -12,7 +12,7 @@ source("dvector.r")
 init_ddr_disk_part()
 
 # Create the vector.
-dv = dvector(list(rnorm(10), rnorm(20), rnorm(15)))
+dv = dvector_from_vectors(list(rnorm(10), rnorm(20), rnorm(15)))
 class(dv)
 
 # Sample a few element positions.
