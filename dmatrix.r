@@ -88,16 +88,35 @@ options(ddr_size_prop=2)
 setMethod("Arith", signature(e1='dmatrix', e2='numeric'),
   function(e1, e2) {
     op = .Generic[[1]]
-    if (length(e1) == 1) {
-#      parts = foreach(part = e1@e$parts) %dopar% {
-#        as_part(do.call(op, list(get_values(part), e2)))
-#      }
+    if (length(e2) == 1) {
+      parts = foreach(part = e1@e$parts) %dopar% {
+        as_part(do.call(op, list(get_values(part), e2)))
+      }
+      dmatrix(parts, e1@e$part_locs[,"start_rows"], e1@e$part_locs[,"end_rows"], 
+              e1@e$part_locs[,"start_cols"], e1@e$part_locs[,"end_cols"])
     } else {
       if ((inherits(e2, "matrix") || inherits(e2, "Matrix")) && all(dim(e1)==dim(e2)))
         e1[] + e2
       else
         stop("arithmetic operation not defined for these shapes")
     }
+  })
+ 
+setMethod("Arith", signature(e1='dmatrix', e2='dmatrix'),
+  function(e1, e2) {
+    op = .Generic[[1]]
+    if (!all(dim(e1) == dim(e2)))
+      stop("non-conformable arrays")
+
+    # We'll use e1's partitioning scheme
+    part_locs = e1@e$part_locs
+    parts = foreach(i=1:nrow(part_locs)) %dopar% {
+      part_rows = part_locs[i,"start_rows"]:part_locs[i,"end_rows"]
+      part_cols = part_locs[i,"start_cols"]:part_locs[i,"end_cols"]
+      as_part(do.call(op, list(e1[part_rows, part_cols], e2[part_rows, part_cols])))
+    }
+    dmatrix(parts, part_locs[,"start_rows"], part_locs[,"end_rows"],
+            part_locs[,"start_cols"], part_locs[,"end_cols"])
   })
  
 setMethod("%*%", signature(x="dmatrix",  y="dmatrix"),
