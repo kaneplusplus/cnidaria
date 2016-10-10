@@ -9,9 +9,6 @@ registerDoSEQ()
 init_ddr_disk_part()
 
 # Chunks for an irregular matrix.
-l = list(list(c(1, 1), matrix(rnorm(25), nrow=5, ncol=5)),
-         list(c(1, 6), matrix(rnorm(36), nrow=6, ncol=6)),
-         list(c(6, 1), matrix(rnorm(5), ncol=5, nrow=1)))
 l = list(matrix(rnorm(25), nrow=5, ncol=5),
          matrix(rnorm(36), nrow=6, ncol=6),
          matrix(rnorm(5), ncol=5, nrow=1))
