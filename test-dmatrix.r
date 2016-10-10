@@ -35,3 +35,6 @@ start_cols2 = c(1, 4)
 dm2 = dmatrix_from_matrices(l2, start_rows2, start_cols2)
 
 sum( (dm %*% dm2)[] - dm[] %*% dm2[]) < 1e-10
+
+sum( (dm + dm)[] - (dm[] + dm[]) ) < 1e-10
+
