@@ -1,6 +1,6 @@
 library(foreach)
 
-source("convert_indices.r")
+source("convert-indices.r")
 
 # TODO: Add better checking to see if the parts make a rectangular
 # matrix.

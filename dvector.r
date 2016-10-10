@@ -1,6 +1,6 @@
 library(foreach)
 
-source("convert_indices.r")
+source("convert-indices.r")
 
 
 setClass('dvector', representation(e='environment'))
