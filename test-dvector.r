@@ -1,5 +1,5 @@
 # Load the data representation.
-source("disk-chunk.r")
+source("disk-part.r")
 
 # We'll use doSEQ as a parallel execution engine.
 library(foreach)
@@ -8,8 +8,8 @@ registerDoSEQ()
 # Test the distributed vector.
 source("dvector.r")
 
-# Initialize disk chunking.
-init_ddr_disk_chunk()
+# Initialize disk parting.
+init_ddr_disk_part()
 
 # Create the vector.
 dv = dvector(list(rnorm(10), rnorm(20), rnorm(15)))

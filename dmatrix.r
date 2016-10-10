@@ -2,13 +2,13 @@ library(foreach)
 
 source("convert_indices.r")
 
-# TODO: Add better checking to see if the chunks make a rectangular
+# TODO: Add better checking to see if the parts make a rectangular
 # matrix.
 # The list has to include the absolute coordinates for the 
-# top-left most element of the chunk, and the matrix chunk.
-dmatrix = function(l, chunk_constructor) {
-  if (missing(chunk_constructor))
-    chunk_constructor = options()$default_chunk_constructor
+# top-left most element of the part, and the matrix part 
+dmatrix = function(l, part_constructor) {
+  if (missing(part_constructor))
+    part_constructor = options()$default_part_constructor
   if (any(!sapply(l, function(x) is.matrix(x[[2]]))))
     stop("All supplied objects must be matrices")
   
@@ -18,15 +18,15 @@ dmatrix = function(l, chunk_constructor) {
   num_cols = sapply(l, function(x) ncol(x[[2]]))
   end_row = start_row + num_rows - 1
   end_col = start_col + num_cols - 1
-  ret = list(chunks=lapply(l, function(x) as_chunk(x[[2]], chunk_constructor)),
-             chunk_locs=cbind(start_row, end_row, start_col, end_col,
+  ret = list(parts=lapply(l, function(x) as_part(x[[2]], part_constructor)),
+             part_locs=cbind(start_row, end_row, start_col, end_col,
                               num_rows, num_cols))
   class(ret) = c("dmatrix", class(ret))
   ret
 }
 
 dim.dmatrix = function(x) {
-  c(max(x$chunk_locs[,"end_row"]), max(x$chunk_locs[,"end_col"]))
+  c(max(x$part_locs[,"end_row"]), max(x$part_locs[,"end_col"]))
 }
 
 `[.dmatrix` = function(x, i, j, ..., drop=TRUE) {
@@ -35,10 +35,10 @@ dim.dmatrix = function(x) {
     # Emerge... we should do some checking to make sure there aren't 
     # too many elements.
     ret = matrix(NA, nrow=nrow(x), ncol=ncol(x))
-    for (i in 1:nrow(x$chunk_locs)) {
-      ret[x$chunk_locs[i, "start_row"]:x$chunk_locs[i, "end_row"],
-          x$chunk_locs[i, "start_col"]:x$chunk_locs[i, "end_col"]] = 
-        get_values(x$chunks[[i]])
+    for (i in 1:nrow(x$part_locs)) {
+      ret[x$part_locs[i, "start_row"]:x$part_locs[i, "end_row"],
+          x$part_locs[i, "start_col"]:x$part_locs[i, "end_col"]] = 
+        get_values(x$parts[[i]])
     }
     return(ret)
   } 
@@ -58,22 +58,22 @@ dim.dmatrix = function(x) {
     if (!is.null(colnames(x)))
       colnames(ret) = colnames(x)[j]
 
-    ret_vals = convert_coord2d(x$chunk_locs, i, j)
+    ret_vals = convert_coord2d(x$part_locs, i, j)
     if (any(ret_vals[,"i"] > nrow(ret)) || any(ret_vals[,"j"] > ncol(ret)))
       stop("subscript out of bounds")
 
     # We'll use 1-dimensional indexing based on the ret_vals.
     
-    # Get the number of rows for each chunk in ret_vals.
+    # Get the number of rows for each part in ret_vals.
     ret_vals = cbind(ret_vals, 
       ret_vals[,"i"] + length(i)*(ret_vals[,"j"]-1),
       ret_vals[,"rel_i"] + 
-        x$chunk_locs[ret_vals[,"chunk"],"num_rows"]*(ret_vals[,"rel_j"]-1))
+        x$part_locs[ret_vals[,"part"],"num_rows"]*(ret_vals[,"rel_j"]-1))
     colnames(ret_vals)[c(6,7)] = c("offset", "rel_offset")
-    for(chunk_num in unique(ret_vals[,"chunk"])) {
-      chunk_rows = which(ret_vals[,"chunk"] == chunk_num)
-      ret[ret_vals[chunk_rows,"offset"]] = 
-        get_values(x$chunks[[chunk_num]], ret_vals[chunk_rows, "rel_offset"])
+    for(part_num in unique(ret_vals[,"part"])) {
+      part_rows = which(ret_vals[,"part"] == part_num)
+      ret[ret_vals[part_rows,"offset"]] = 
+        get_values(x$parts[[part_num]], ret_vals[part_rows, "rel_offset"])
     }
     ret
   } else {
