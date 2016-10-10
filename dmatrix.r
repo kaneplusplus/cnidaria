@@ -96,7 +96,12 @@ options(ddr_size_prop=2)
  
 setMethod("%*%", signature(x="dmatrix",  y="dmatrix"),
   function(x, y) {
-    # TODO: CHECK DIMENSIONS!
+    if (ncol(x) != nrow(y))
+      stop("non-conformable arguments")
+
+    # Get the absolute coordinates that will define resulting parts.
+    # Note that this is only one (possibly dumb) way of defining the resulting
+    # parts.
 
     i_starts = seq(1, nrow(x), by=floor(nrow(x)/ options()$ddr_size_prop))
     i_ends = c(i_starts[-1]-1, nrow(x))

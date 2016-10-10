@@ -75,8 +75,18 @@ setMethod("length", signature(x='dvector'), function(x) x@e$length)
 setMethod("Arith", signature(e1='dvector', e2='numeric'),
   function(e1, e2) {
     op = .Generic[[1]]
-    if (length(e2) == 1)
-    dvector(foreach(part = e1@e$parts) %dopar% op(get_values(part), e2))
+    if (length(e2) == 1) {
+      parts = foreach(part = e1@e$parts) %dopar% {
+        as_part(do.call(op, list(get_values(part), e2)))
+      }
+      e=new.env(parent=emptyenv())
+      assign("parts", parts, envir=e)
+      assign("length", e1@e$length, envir=e)
+      assign("lengths", e1@e$lengths, envir=e)
+      new('dvector', e=e)
+    } else if (length(e2) == e1) {
+      e2[] + e1
+    }
   })
 
 #Ops.dvector = function(e1, e2) {
