@@ -1,13 +1,15 @@
 library(foreach)
 
 source("convert-indices.r")
+source("dvector.r")
 
 setClass('dmatrix', representation(e='environment'))
 
 dmatrix = function(parts, start_rows, end_rows, start_cols, end_cols) {
   num_rows = end_rows - start_rows + 1
   num_cols = end_cols - start_cols + 1
-  part_locs = cbind(start_rows, end_rows, num_rows, start_cols, end_cols, num_cols)
+  part_locs = cbind(start_rows, end_rows, num_rows, start_cols, end_cols, 
+                    num_cols)
   e = new.env(parent=emptyenv())
   assign("parts", parts, envir=e)
   assign("part_locs", part_locs, envir=e)
@@ -83,7 +85,9 @@ setMethod("[", signature(x="dmatrix", i="numeric", j="numeric", drop="ANY"),
     ret
   })
 
-options(ddr_size_prop=2)
+# The default partition sizes.
+options(ddr_row_part_size=2)
+options(ddr_col_part_size=2)
 
 setMethod("Arith", signature(e1='dmatrix', e2='numeric'),
   function(e1, e2) {
@@ -118,27 +122,53 @@ setMethod("Arith", signature(e1='dmatrix', e2='dmatrix'),
     dmatrix(parts, part_locs[,"start_rows"], part_locs[,"end_rows"],
             part_locs[,"start_cols"], part_locs[,"end_cols"])
   })
- 
+
+setMethod("%*%", signature(x="dmatrix", y="numeric"),
+  function(x, y) {
+    if (ncol(x) != nrow(y)) stop("non-conformable arguments")
+    # We should check to see if we can emerge something that's
+    # options()$ddr_row_part_size x length(y)
+    i_starts = seq(1, nrow(x), by=options()$ddr_row_part_size)
+    i_ends = c(i_starts[-1]-1, nrow(x))
+    if (length(i_starts) > length(i_ends)) i_starts=i_starts[-length(i_starts)]
+
+    foreach(i=1:length(i_starts), .combine=c) %dopar% {
+      x[i_starts[i]:i_ends[i],] %*% y
+    }
+  }) 
+
+setMethod("%*%", signature(x="numeric", y="dmatrix"),
+  function(x, y) {
+    if (length(x) != nrow(y)) stop("non-conformable arguments")
+
+    # We should check to see if we can emerge something that's
+    # options()$ddr_row_part_size x length(y)
+    j_starts = seq(1, nrow(x), by=options()$ddr_row_part_size)
+    j_ends = c(j_starts[-1]-1, ncol(x))
+    if (length(j_starts) > length(j_ends)) j_starts=j_starts[-length(j_starts)]
+    foreach(j=1:length(j_starts), .combine=c) %dopar% {
+      y %*% x[j_starts[j]:j_ends[j],] 
+    }
+  }) 
+
 setMethod("%*%", signature(x="dmatrix",  y="dmatrix"),
   function(x, y) {
-    if (ncol(x) != nrow(y))
-      stop("non-conformable arguments")
+    if (ncol(x) != nrow(y)) stop("non-conformable arguments")
 
     # Get the absolute coordinates that will define resulting parts.
     # Note that this is only one (possibly dumb) way of defining the resulting
     # parts. 
 
-    i_starts = seq(1, nrow(x), by=floor(nrow(x)/ options()$ddr_size_prop))
+    i_starts = seq(1, nrow(x), by=options()$ddr_row_part_size)
     i_ends = c(i_starts[-1]-1, nrow(x))
-    # If the ddr_size_prop divides nrow(x)+1 then we get an extra element.
-    # Remove it.
+    # If we get an extra element, remove it.
     if (length(i_starts) > length(i_ends)) i_starts=i_starts[-length(i_starts)]
 
-    j_starts = seq(1, ncol(y), by=floor(ncol(y)/ options()$ddr_size_prop))
+    j_starts = seq(1, ncol(y), by=options()$ddr_col_part_size)
     j_ends = c(j_starts[-1]-1, ncol(y))
     if (length(j_starts) > length(j_ends)) j_starts=j_starts[-length(j_starts)]
 
-    k_starts = seq(1, ncol(x), by=floor(ncol(x)/ options()$ddr_size_prop))
+    k_starts = seq(1, ncol(x), by=options()$ddr_col_part_size)
     k_ends = c(k_starts[-1]-1, ncol(x))
     if (length(k_starts) > length(k_ends)) k_starts=k_starts[-length(k_starts)]
 
@@ -162,4 +192,77 @@ setMethod("%*%", signature(x="dmatrix",  y="dmatrix"),
             part_locs[,"start_rows"], part_locs[,"end_rows"], 
             part_locs[,"start_cols"], part_locs[,"end_cols"])
   })
+
+setMethod("%*%", signature(x="dmatrix", y="dvector"),
+  function(x, y) {
+    if (ncol(x) != length(y)) stop("non-conformable arguments")
+    # Construct a dmatrix from y and use the already-defined matrix-multiply
+    # operator.
+    i_starts = seq(1, nrow(x), by=options()$ddr_row_part_size)
+    i_ends = c(i_starts[-1]-1, nrow(x))
+    # If we get an extra element, remove it.
+    if (length(i_starts) > length(i_ends)) i_starts=i_starts[-length(i_starts)]
+
+    j_starts = rep(1, length(i_starts))
+    j_ends = rep(1, length(i_starts))
+
+    k_starts = seq(1, ncol(x), by=options()$ddr_col_part_size)
+    k_ends = c(k_starts[-1]-1, ncol(x))
+    # Should we localize row parts to the same process instead?
+    # Or should we do the entire outer product of matrix part multiplications
+    # and then add up terms?
+    matrix_parts = foreach (i=1:length(i_starts), .combine=c) %:% 
+      foreach (j=1:length(j_starts)) %dopar% {
+        # start_row, start_col, num_rows, num_cols, end_row, end_col
+        list(part_loc=c(i_starts[i], j_starts[j], i_ends[i], j_ends[j]),
+          part=as_part(foreach (k=1:length(k_starts), .combine=`+`) %do% {
+            x[i_starts[i]:i_ends[i], k_starts[k]:k_ends[k]] %*%
+              y[k_starts[k]:k_ends[k]]
+          }))
+    }
+    part_locs=foreach(i=1:length(matrix_parts), .combine=rbind) %do% {
+      matrix_parts[[i]]$part_loc
+    }
+    colnames(part_locs) = c("start_rows", "start_cols", "end_rows", "end_cols")
+    dmatrix(parts=lapply(matrix_parts, function(x) x[[2]]),
+            part_locs[,"start_rows"], part_locs[,"end_rows"], 
+            part_locs[,"start_cols"], part_locs[,"end_cols"])
+  }) 
+
+setMethod("%*%", signature(x="dvector", y="dmatrix"),
+  function(x, y) {
+    if (length(x) != nrow(y)) stop("non-conformable arguments")
+
+    j_starts = seq(1, ncol(y), by=options()$ddr_col_part_size)
+    j_ends = c(j_starts[-1]-1, ncol(y))
+    if (length(j_starts) > length(j_ends)) j_starts=j_starts[-length(j_starts)]
+
+    i_starts = rep(1, length(j_starts))
+    i_ends = i_starts
+
+    k_starts = seq(1, nrow(y), by=options()$ddr_col_part_size)
+    k_ends = c(k_starts[-1]-1, nrow(y))
+    if (length(k_starts) > length(k_ends)) k_starts=k_starts[-length(k_starts)]
+
+    # Should we localize row parts to the same process instead?
+    # Or should we do the entire outer product of matrix part multiplications
+    # and then add up terms?
+    matrix_parts = foreach (i=1:length(i_starts), .combine=c) %:% 
+      foreach (j=1:length(j_starts)) %dopar% {
+        # start_row, start_col, num_rows, num_cols, end_row, end_col
+        list(part_loc=c(i_starts[i], j_starts[j], i_ends[i], j_ends[j]),
+          part=as_part(foreach (k=1:length(k_starts), .combine=`+`) %do% {
+            x[k_starts[k]:k_ends[k]] %*%
+              y[k_starts[k]:k_ends[k], j_starts[j]:j_ends[j]]
+          }))
+    }
+    part_locs=foreach(i=1:length(matrix_parts), .combine=rbind) %do% {
+      matrix_parts[[i]]$part_loc
+    }
+    colnames(part_locs) = c("start_rows", "start_cols", "end_rows", "end_cols")
+    dmatrix(parts=lapply(matrix_parts, function(x) x[[2]]),
+            part_locs[,"start_rows"], part_locs[,"end_rows"], 
+            part_locs[,"start_cols"], part_locs[,"end_cols"])
+  }) 
+
 

@@ -35,3 +35,9 @@ sum( (dm %*% dm2)[] - dm[] %*% dm2[]) < 1e-10
 
 sum( (dm + dm)[] - (dm[] + dm[]) ) < 1e-10
 
+dv = dvector_from_vectors(list(rnorm(3), rnorm(3), rnorm(5)))
+
+sum( (dm %*% dv)[] - (dm[] %*% dv[]) ) < 1e-10
+
+
+
