@@ -48,17 +48,17 @@ setMethod("[", signature(x="dmatrix", i="missing", j="missing"),
     ret
   })
 
-setMethod("[", signature(x="dmatrix", i="numeric", j="missing", drop="ANY"),
+setMethod("[", signature(x="dmatrix", i="numeric", j="missing", drop="missing"),
   function(x, i) {
-    x[i, 1:ncol(x), drop]
+    x[i, 1:ncol(x)]
   })
 
-setMethod("[", signature(x="dmatrix", i="missing", j="numeric", drop="ANY"),
+setMethod("[", signature(x="dmatrix", i="missing", j="numeric", drop="missing"),
   function(x, j) {
-    x[1:nrow(x), j, drop]
+    x[1:nrow(x), j]
   })
 
-setMethod("[", signature(x="dmatrix", i="numeric", j="numeric", drop="ANY"),
+setMethod("[", signature(x="dmatrix", i="numeric", j="numeric", drop="missing"),
   function(x, i, j) {
     ret = matrix( NA, nrow=length(unique(i)), ncol=length(unique(j)) )
     if (!is.null(nrow(x)))
@@ -125,14 +125,14 @@ setMethod("Arith", signature(e1='dmatrix', e2='dmatrix'),
 
 setMethod("%*%", signature(x="dmatrix", y="numeric"),
   function(x, y) {
-    if (ncol(x) != nrow(y)) stop("non-conformable arguments")
+    if (ncol(x) != length(y)) stop("non-conformable arguments")
     # We should check to see if we can emerge something that's
     # options()$ddr_row_part_size x length(y)
     i_starts = seq(1, nrow(x), by=options()$ddr_row_part_size)
     i_ends = c(i_starts[-1]-1, nrow(x))
     if (length(i_starts) > length(i_ends)) i_starts=i_starts[-length(i_starts)]
 
-    foreach(i=1:length(i_starts), .combine=c) %dopar% {
+    foreach(i=1:length(i_starts), .combine=rbind) %dopar% {
       x[i_starts[i]:i_ends[i],] %*% y
     }
   }) 
@@ -143,11 +143,11 @@ setMethod("%*%", signature(x="numeric", y="dmatrix"),
 
     # We should check to see if we can emerge something that's
     # options()$ddr_row_part_size x length(y)
-    j_starts = seq(1, nrow(x), by=options()$ddr_row_part_size)
-    j_ends = c(j_starts[-1]-1, ncol(x))
+    j_starts = seq(1, ncol(y), by=options()$ddr_col_part_size)
+    j_ends = c(j_starts[-1]-1, ncol(y))
     if (length(j_starts) > length(j_ends)) j_starts=j_starts[-length(j_starts)]
-    foreach(j=1:length(j_starts), .combine=c) %dopar% {
-      y %*% x[j_starts[j]:j_ends[j],] 
+    foreach(j=1:length(j_starts), .combine=cbind) %dopar% {
+      x %*% y[,j_starts[j]:j_ends[j]] 
     }
   }) 
 

@@ -39,5 +39,5 @@ dv = dvector_from_vectors(list(rnorm(3), rnorm(3), rnorm(5)))
 
 sum( (dm %*% dv)[] - (dm[] %*% dv[]) ) < 1e-10
 
-
+irlba(dm, nv=2, nu=2, mult=`%*%`)
 
