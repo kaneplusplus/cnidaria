@@ -1,4 +1,5 @@
 library(foreach)
+library(Matrix)
 
 source("convert-indices.r")
 source("dvector.r")
@@ -39,7 +40,7 @@ setMethod("[", signature(x="dmatrix", i="missing", j="missing"),
   function(x) {
     # Emerge... we should do some checking to make sure there aren't 
     # too many elements.
-    ret = matrix(NA, nrow=nrow(x), ncol=ncol(x))
+    ret = Matrix(0, nrow=nrow(x), ncol=ncol(x))
     for (i in 1:nrow(x@e$part_locs)) {
       ret[x@e$part_locs[i, "start_rows"]:x@e$part_locs[i, "end_rows"],
           x@e$part_locs[i, "start_cols"]:x@e$part_locs[i, "end_cols"]] = 
@@ -60,7 +61,7 @@ setMethod("[", signature(x="dmatrix", i="missing", j="numeric", drop="missing"),
 
 setMethod("[", signature(x="dmatrix", i="numeric", j="numeric", drop="missing"),
   function(x, i, j) {
-    ret = matrix( NA, nrow=length(unique(i)), ncol=length(unique(j)) )
+    ret = Matrix( NA, nrow=length(unique(i)), ncol=length(unique(j)) )
     if (!is.null(nrow(x)))
       rownames(ret) = rownames(x)[i]
     if (!is.null(colnames(x)))
@@ -99,10 +100,12 @@ setMethod("Arith", signature(e1='dmatrix', e2='numeric'),
       dmatrix(parts, e1@e$part_locs[,"start_rows"], e1@e$part_locs[,"end_rows"], 
               e1@e$part_locs[,"start_cols"], e1@e$part_locs[,"end_cols"])
     } else {
-      if ((inherits(e2, "matrix") || inherits(e2, "Matrix")) && all(dim(e1)==dim(e2)))
+      if ((inherits(e2, "matrix") || inherits(e2, "Matrix")) && 
+           all(dim(e1)==dim(e2))) {
         e1[] + e2
-      else
+      } else {
         stop("arithmetic operation not defined for these shapes")
+      }
     }
   })
  
@@ -117,7 +120,8 @@ setMethod("Arith", signature(e1='dmatrix', e2='dmatrix'),
     parts = foreach(i=1:nrow(part_locs)) %dopar% {
       part_rows = part_locs[i,"start_rows"]:part_locs[i,"end_rows"]
       part_cols = part_locs[i,"start_cols"]:part_locs[i,"end_cols"]
-      as_part(do.call(op, list(e1[part_rows, part_cols], e2[part_rows, part_cols])))
+      as_part(do.call(op, 
+        list(e1[part_rows, part_cols], e2[part_rows, part_cols])))
     }
     dmatrix(parts, part_locs[,"start_rows"], part_locs[,"end_rows"],
             part_locs[,"start_cols"], part_locs[,"end_cols"])

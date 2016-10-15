@@ -29,7 +29,11 @@ get_values.ddr_disk_part = function(part, i, ...) {
   con = file(part$file_path, open="rb", blocking=FALSE)
   x = unserialize(con)
   close(con)
-  x[i, ...]
+  if (!missing(i)) {
+    x[i, ...]
+  } else {
+    x[...]
+  }
 }
 
 get_attributes.ddr_disk_part = function(part, labels) {

@@ -12,7 +12,7 @@ guid <- function(len=7) {
 # The get_ prefix denotes we are getting something from the distributed
 # part. This could be cached by the part object.
 
-get_values = function(part, i, j, ...) UseMethod("get_values", part)
+get_values = function(part, i, ...) UseMethod("get_values", part)
 
 get_attributes = function(part, labels) UseMethod("get_attributes", part)
 
