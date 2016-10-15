@@ -29,10 +29,14 @@ get_values.ddr_disk_part = function(part, i, ...) {
   con = file(part$file_path, open="rb", blocking=FALSE)
   x = unserialize(con)
   close(con)
-  if (!missing(i)) {
+  if (!missing(i) && !missing(...)) {
     x[i, ...]
-  } else {
+  } else if (missing(i) && !missing(...)) {
     x[...]
+  } else if (!missing(i) && missing(...)) {
+    x[i]
+  } else {
+    x
   }
 }
 

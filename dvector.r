@@ -18,8 +18,10 @@ dvector = function(parts, lengths) {
 dvector_from_vectors = function(l, part_constructor) {
   if (missing(part_constructor)) 
     part_constructor = options()$default_part_constructor
-  if (any(!sapply(l, is.vector))) 
+  if (any(!sapply(l, function(x) inherits(x, "numeric") || 
+                                 inherits(x, "sparseVector")))) {
     stop("All supplied objects must be vectors.")
+  }
   dvector(lapply(l, as_part, part_constructor), sapply(l, length))
 }
 
@@ -28,7 +30,7 @@ setMethod("[",
   function(x) {
     # TODO: we need a warning that the user probably doesn't want to 
     # emerge the entire distributed vector if the size is above a threshold.
-    unlist(sapply(x@e$parts, get_values))
+    unlist(sapply(x@e$parts, function(x) as.vector(get_values(x))))
   })
 
 setMethod("[",
@@ -37,8 +39,8 @@ setMethod("[",
     ret = rep(NA, length(i))
     ci = convert_indices(x@e$lengths, i)
     for (cn in unique(ci[,"part"])) {
-      ret[ci[,"part"] == cn] = get_values(x@e$parts[[cn]], 
-        ci[ci[,"part"]==cn,"index"])
+      ret[ci[,"part"] == cn] = as.vector(get_values(x@e$parts[[cn]], 
+        ci[ci[,"part"]==cn,"index"]))
     }
     ret
   })

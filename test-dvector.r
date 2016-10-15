@@ -1,3 +1,6 @@
+library(testthat)
+library(Matrix)
+
 # Load the data representation.
 source("disk-part.r")
 
@@ -14,6 +17,9 @@ init_ddr_disk_part()
 # Create the vector.
 dv = dvector_from_vectors(list(rnorm(10), rnorm(20), rnorm(15)))
 class(dv)
+
+dv_sparse = dvector_from_vectors(list(rnorm(10), 
+  sparseVector(1:2, 4:5, 15), rnorm(20)))
 
 # Sample a few element positions.
 inds = sample.int(length(dv), 10, replace=TRUE)
