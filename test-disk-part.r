@@ -1,7 +1,7 @@
 source("disk-part.r")
 
-# Initialize ddr disk parting.
-init_ddr_disk_part()
+# Initialize disk parting.
+init_disk_part()
 
 # Create a new part from a matrix.
 a = as_part(matrix(1:10, ncol=2))

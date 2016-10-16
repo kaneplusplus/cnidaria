@@ -6,7 +6,7 @@ library(foreach)
 registerDoSEQ()
 
 # and disk parts for the data manager.
-init_ddr_disk_part()
+init_disk_part()
 
 # Chunks for an irregular matrix.
 l = list(matrix(rnorm(25), nrow=5, ncol=5),

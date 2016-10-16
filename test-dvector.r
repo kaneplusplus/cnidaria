@@ -12,7 +12,7 @@ registerDoSEQ()
 source("dvector.r")
 
 # Initialize disk parting.
-init_ddr_disk_part()
+init_disk_part()
 
 # Create the vector.
 dv = dvector_from_vectors(list(rnorm(10), rnorm(20), rnorm(15)))

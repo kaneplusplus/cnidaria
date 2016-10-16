@@ -87,8 +87,8 @@ setMethod("[", signature(x="dmatrix", i="numeric", j="numeric", drop="missing"),
   })
 
 # The default partition sizes.
-options(ddr_row_part_size=2)
-options(ddr_col_part_size=2)
+options(row_part_size=2)
+options(col_part_size=2)
 
 setMethod("Arith", signature(e1='dmatrix', e2='numeric'),
   function(e1, e2) {
@@ -131,8 +131,8 @@ setMethod("%*%", signature(x="dmatrix", y="numeric"),
   function(x, y) {
     if (ncol(x) != length(y)) stop("non-conformable arguments")
     # We should check to see if we can emerge something that's
-    # options()$ddr_row_part_size x length(y)
-    i_starts = seq(1, nrow(x), by=options()$ddr_row_part_size)
+    # options()$row_part_size x length(y)
+    i_starts = seq(1, nrow(x), by=options()$row_part_size)
     i_ends = c(i_starts[-1]-1, nrow(x))
     if (length(i_starts) > length(i_ends)) i_starts=i_starts[-length(i_starts)]
 
@@ -146,8 +146,8 @@ setMethod("%*%", signature(x="numeric", y="dmatrix"),
     if (length(x) != nrow(y)) stop("non-conformable arguments")
 
     # We should check to see if we can emerge something that's
-    # options()$ddr_row_part_size x length(y)
-    j_starts = seq(1, ncol(y), by=options()$ddr_col_part_size)
+    # options()$row_part_size x length(y)
+    j_starts = seq(1, ncol(y), by=options()$col_part_size)
     j_ends = c(j_starts[-1]-1, ncol(y))
     if (length(j_starts) > length(j_ends)) j_starts=j_starts[-length(j_starts)]
     foreach(j=1:length(j_starts), .combine=cbind) %dopar% {
@@ -163,16 +163,16 @@ setMethod("%*%", signature(x="dmatrix",  y="dmatrix"),
     # Note that this is only one (possibly dumb) way of defining the resulting
     # parts. 
 
-    i_starts = seq(1, nrow(x), by=options()$ddr_row_part_size)
+    i_starts = seq(1, nrow(x), by=options()$row_part_size)
     i_ends = c(i_starts[-1]-1, nrow(x))
     # If we get an extra element, remove it.
     if (length(i_starts) > length(i_ends)) i_starts=i_starts[-length(i_starts)]
 
-    j_starts = seq(1, ncol(y), by=options()$ddr_col_part_size)
+    j_starts = seq(1, ncol(y), by=options()$col_part_size)
     j_ends = c(j_starts[-1]-1, ncol(y))
     if (length(j_starts) > length(j_ends)) j_starts=j_starts[-length(j_starts)]
 
-    k_starts = seq(1, ncol(x), by=options()$ddr_col_part_size)
+    k_starts = seq(1, ncol(x), by=options()$col_part_size)
     k_ends = c(k_starts[-1]-1, ncol(x))
     if (length(k_starts) > length(k_ends)) k_starts=k_starts[-length(k_starts)]
 
@@ -202,7 +202,7 @@ setMethod("%*%", signature(x="dmatrix", y="dvector"),
     if (ncol(x) != length(y)) stop("non-conformable arguments")
     # Construct a dmatrix from y and use the already-defined matrix-multiply
     # operator.
-    i_starts = seq(1, nrow(x), by=options()$ddr_row_part_size)
+    i_starts = seq(1, nrow(x), by=options()$row_part_size)
     i_ends = c(i_starts[-1]-1, nrow(x))
     # If we get an extra element, remove it.
     if (length(i_starts) > length(i_ends)) i_starts=i_starts[-length(i_starts)]
@@ -210,7 +210,7 @@ setMethod("%*%", signature(x="dmatrix", y="dvector"),
     j_starts = rep(1, length(i_starts))
     j_ends = rep(1, length(i_starts))
 
-    k_starts = seq(1, ncol(x), by=options()$ddr_col_part_size)
+    k_starts = seq(1, ncol(x), by=options()$col_part_size)
     k_ends = c(k_starts[-1]-1, ncol(x))
     # Should we localize row parts to the same process instead?
     # Or should we do the entire outer product of matrix part multiplications
@@ -237,14 +237,14 @@ setMethod("%*%", signature(x="dvector", y="dmatrix"),
   function(x, y) {
     if (length(x) != nrow(y)) stop("non-conformable arguments")
 
-    j_starts = seq(1, ncol(y), by=options()$ddr_col_part_size)
+    j_starts = seq(1, ncol(y), by=options()$col_part_size)
     j_ends = c(j_starts[-1]-1, ncol(y))
     if (length(j_starts) > length(j_ends)) j_starts=j_starts[-length(j_starts)]
 
     i_starts = rep(1, length(j_starts))
     i_ends = i_starts
 
-    k_starts = seq(1, nrow(y), by=options()$ddr_col_part_size)
+    k_starts = seq(1, nrow(y), by=options()$col_part_size)
     k_ends = c(k_starts[-1]-1, nrow(y))
     if (length(k_starts) > length(k_ends)) k_starts=k_starts[-length(k_starts)]
 
