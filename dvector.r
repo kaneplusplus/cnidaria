@@ -1,7 +1,7 @@
 library(foreach)
 
 source("convert-indices.r")
-
+source("params.r")
 
 setClass('dvector', representation(e='environment'))
 
@@ -18,8 +18,8 @@ dvector = function(parts, lengths) {
 dvector_from_vectors = function(l, part_constructor) {
   if (missing(part_constructor)) 
     part_constructor = options()$default_part_constructor
-  if (any(!sapply(l, function(x) inherits(x, "numeric") || 
-                                 inherits(x, "sparseVector")))) {
+  if (any(!sapply(l, function(x) {is.vector(x) ||
+                                  inherits(x, "sparseVector")}))) {
     stop("All supplied objects must be vectors.")
   }
   dvector(lapply(l, as_part, part_constructor), sapply(l, length))
@@ -30,44 +30,32 @@ setMethod("[",
   function(x) {
     # TODO: we need a warning that the user probably doesn't want to 
     # emerge the entire distributed vector if the size is above a threshold.
-    unlist(sapply(x@e$parts, function(x) as.vector(get_values(x))))
+    Reduce(c, Map(function(x) as.vector(get_values(x)), x@e$parts))
   })
 
-setMethod("[",
+setMethod('[',
   signature(x='dvector', i="numeric"),
   function(x, i) {
     ret = rep(NA, length(i))
     ci = convert_indices(x@e$lengths, i)
-    for (cn in unique(ci[,"part"])) {
-      ret[ci[,"part"] == cn] = as.vector(get_values(x@e$parts[[cn]], 
-        ci[ci[,"part"]==cn,"index"]))
+    for (cn in unique(ci[,'part'])) {
+      ret[ci[,'part'] == cn] = as.vector(get_values(x@e$parts[[cn]], 
+        ci[ci[,'part']==cn, 'index']))
     }
     ret
   })
 
-#`[.dvector` = function(x, i) {
-#  if (missing(i)) {
-#    # TODO: we need a warning that the user probably doesn't want to 
-#    # emerge the entire distributed vector if the size is above a threshold.
-#    unlist(sapply(x$parts, get_values))
-#  } else if (is.numeric(i)) {
-#    ret = rep(NA, length(i))
-#    ci = convert_indices(x$lengths, i)
-#    for (cn in unique(ci[,"part"])) {
-#      ret[ci[,"part"] == cn] = get_values(x$parts[[cn]], 
-#        ci[ci[,"part"]==cn,"index"])
-#    }
-#    ret
-#  } else {
-#    stop("Index type not supported.")
-#  }
-#}
+setMethod('[',
+  signature(x='dvector', i='dvector'),
+  function(x, i) {
+    dvector(
+      parts=foreach(part=i@e$parts) %dopar% {
+        as_part(x[get_values(part)])
+      },
+      lengths=i@e$lenghts)
+  })
 
 setMethod("length", signature(x='dvector'), function(x) x@e$length)
-
-#length.dvector = function(x) {
-#  x$length
-#}
 
 # Arithmetic operators require an execution engine. We'll use foreach.
 

@@ -2,6 +2,7 @@ library(foreach)
 library(Matrix)
 
 source("convert-indices.r")
+source("params.r")
 source("dvector.r")
 
 setClass('dmatrix', representation(e='environment'))
@@ -49,20 +50,83 @@ setMethod("[", signature(x="dmatrix", i="missing", j="missing"),
     ret
   })
 
-setMethod("[", signature(x="dmatrix", i="numeric", j="missing", drop="missing"),
-  function(x, i) {
-    x[i, 1:ncol(x)]
+setMethod('[', signature(x='dmatrix', i='numeric', j='missing', drop='missing'),
+  function(x, i) x[i, drop=TRUE])
+
+setMethod('[', signature(x='dmatrix', i='numeric', j='missing', drop='logical'),
+  function(x, i, drop) {
+    if (ncol(x) <= options()$col_part_size) {
+      # It's small enough to return as a Matrix.
+      x[i, 1:ncol(x)]
+    } else {
+      j_starts = seq(1, ncol(x), by=options()$col_part_size)
+      j_ends = c(j_starts[-1]-1, ncol(x))
+      if (length(j_starts) > length(j_ends)) 
+        j_starts = j_starts[-length(j_starts)]
+
+      start_rows = rep(1, length(j_starts))
+      end_rows = rep(length(i), length(j_starts))
+      if (length(i) > 1 || drop==FALSE) {
+        dmatrix(
+          parts=foreach(j=1:length(j_starts)) %dopar% {
+            as_part(x[i, j_starts[j]:j_ends[j]])
+          },
+          start_rows,
+          end_rows,
+          j_starts,
+          j_ends)
+      } else {
+        dvector(
+          parts=foreach(j=1:length(j_starts)) %dopar% {
+            as_part(as.vector(x[i, j_starts[j]:j_ends[j]]))
+          },
+          lengths=i_ends - i_starts + 1)
+      }
+    }
   })
 
 setMethod("[", signature(x="dmatrix", i="missing", j="numeric", drop="missing"),
-  function(x, j) {
-    x[1:nrow(x), j]
+  function(x, j) x[,j,drop=TRUE])
+
+setMethod("[", signature(x="dmatrix", i="missing", j="numeric", drop="logical"),
+  function(x, j, drop) {
+    if (nrow(x) <= options()$row_part_size) {
+      x[1:nrow(x), j]
+    } else {
+      i_starts = seq(1, nrow(x), by=options()$row_part_size)
+      i_ends = c(i_starts[-1]-1, nrow(x))
+      if (length(i_starts) > length(i_ends))
+        i_starts = i_starts[-length(i_starts)]
+
+      start_cols = rep(1, length(i_starts))
+      end_cols = rep(length(j), length(i_starts))
+      if (length(j) > 1 || drop == FALSE) {
+        dmatrix(
+          parts=foreach(i=1:length(i_starts)) %dopar% {
+            as_part(x[i_starts[i]:i_ends[i], j])
+          },
+          i_starts,
+          i_ends,
+          start_cols,
+          end_cols)
+      } else {
+        dvector(
+          parts=foreach(i=1:length(i_starts)) %dopar% {
+            as_part(as.vector(x[i_starts[i]:i_ends[i], j]))
+          },
+          lengths=i_ends - i_starts + 1)
+      }
+    }
   })
 
 setMethod("[", signature(x="dmatrix", i="numeric", j="numeric", drop="missing"),
+  function(x, i, j) x[i,j,drop=TRUE])
+
+setMethod("[", signature(x="dmatrix", i="numeric", j="numeric", drop="logical"),
   function(x, i, j) {
-    ret = Matrix( NA, nrow=length(unique(i)), ncol=length(unique(j)) )
-    if (!is.null(nrow(x)))
+    ret = Matrix(as.numeric(NA), nrow=length(unique(i)), 
+                 ncol=length(unique(j)) )
+    if (!is.null(rownames(x)))
       rownames(ret) = rownames(x)[i]
     if (!is.null(colnames(x)))
       colnames(ret) = colnames(x)[j]
@@ -83,12 +147,9 @@ setMethod("[", signature(x="dmatrix", i="numeric", j="numeric", drop="missing"),
       ret[ret_vals[part_rows,"offset"]] = 
         get_values(x@e$parts[[part_num]], ret_vals[part_rows, "rel_offset"])
     }
+    if (drop && (length(i) == 1 || length(j) == 1)) ret = as.numeric(drop)
     ret
   })
-
-# The default partition sizes.
-options(row_part_size=2)
-options(col_part_size=2)
 
 setMethod("Arith", signature(e1='dmatrix', e2='numeric'),
   function(e1, e2) {
@@ -137,7 +198,7 @@ setMethod("%*%", signature(x="dmatrix", y="numeric"),
     if (length(i_starts) > length(i_ends)) i_starts=i_starts[-length(i_starts)]
 
     foreach(i=1:length(i_starts), .combine=rbind) %dopar% {
-      x[i_starts[i]:i_ends[i],] %*% y
+      x[i_starts[i]:i_ends[i], 1:ncol(x)] %*% y
     }
   }) 
 
@@ -151,7 +212,7 @@ setMethod("%*%", signature(x="numeric", y="dmatrix"),
     j_ends = c(j_starts[-1]-1, ncol(y))
     if (length(j_starts) > length(j_ends)) j_starts=j_starts[-length(j_starts)]
     foreach(j=1:length(j_starts), .combine=cbind) %dopar% {
-      x %*% y[,j_starts[j]:j_ends[j]] 
+      x %*% y[1:nrow(y), j_starts[j]:j_ends[j]] 
     }
   }) 
 
@@ -206,7 +267,6 @@ setMethod("%*%", signature(x="dmatrix", y="dvector"),
     i_ends = c(i_starts[-1]-1, nrow(x))
     # If we get an extra element, remove it.
     if (length(i_starts) > length(i_ends)) i_starts=i_starts[-length(i_starts)]
-
     j_starts = rep(1, length(i_starts))
     j_ends = rep(1, length(i_starts))
 

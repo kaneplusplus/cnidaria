@@ -35,5 +35,10 @@ dv2 = dv + 1
 # Make sure it's the same as emerging dv and then adding 1.
 any(dv2[] != (dv+1)[])
 
+dv_index = dvector_from_vectors(list(inds, inds))
+
+dv[dv_index][]
+
+dv_index = dvector_from_vectors(list(inds, inds))
 
 

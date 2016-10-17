@@ -1,3 +1,5 @@
+library(testthat)
+
 source("disk-part.r")
 source("dmatrix.r")
 
@@ -20,7 +22,7 @@ dm = dmatrix_from_matrices(l, start_rows, start_cols)
 
 # Make sure that emerging the entire matrix is the same as
 # only emerging the speified elements.
-all(dm[][1:3,4:5] == dm[1:3,4:5])
+all.equal(as.matrix(dm[][1:3,4:5]),  as.matrix(dm[1:3, 4:5]))
 
 # Chunks for an irregular matrix.
 l2 = list(matrix(rnorm(33), nrow=11, ncol=3),
@@ -31,14 +33,24 @@ start_cols2 = c(1, 4)
 # Add the irregular parts to a distributed matrix.
 dm2 = dmatrix_from_matrices(l2, start_rows2, start_cols2)
 
-sum( (dm %*% dm2)[] - dm[] %*% dm2[]) < 1e-10
+# Matrix-multiplication and addition.
+all.equal( (dm %*% dm2)[], dm[] %*% dm2[])
 
-sum( (dm + dm)[] - (dm[] + dm[]) ) < 1e-10
+all.equal( (dm + dm)[], dm[] + dm[])
 
 dv = dvector_from_vectors(list(rnorm(3), rnorm(3), rnorm(5)))
 
-sum( (dm %*% dv)[] - (dm[] %*% dv[]) ) < 1e-10
+all.equal( as.matrix((dm %*% dv)[]), as.matrix(dm[] %*% dv[]))
 
+# The irlba
 library(irlba)
-irlba(dm, nv=2, nu=2, mult=`%*%`)
+
+a = irlba(dm, nv=2, nu=2, mult=`%*%`)
+b = irlba(dm[], nv=2, nu=2, mult=`%*%`)
+
+all.equal(a$d, b$d)
+all.equal(abs(a$u), abs(b$u))
+all.equal(abs(a$v), abs(b$v))
+all.equal(a$iter, b$iter)
+all.equal(a$mprod, b$mprod)
 
