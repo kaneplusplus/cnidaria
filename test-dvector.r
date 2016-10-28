@@ -10,7 +10,6 @@ registerDoSEQ()
 
 # Test the distributed vector.
 source("dvector.r")
-
 # Initialize disk parting.
 init_disk_part()
 
@@ -38,6 +37,4 @@ expect_equal(dv2[], (dv+1)[])
 dv_index = dvector_from_vectors(list(inds, inds))
 
 expect_equal(dv[dv_index][], dv[][dv_index[]])
-
-
 

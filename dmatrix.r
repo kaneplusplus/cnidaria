@@ -50,9 +50,6 @@ setMethod("[", signature(x="dmatrix", i="missing", j="missing"),
     ret
   })
 
-setMethod('[', signature(x='dmatrix', i='numeric', j='missing', drop='missing'),
-  function(x, i) x[i, drop=TRUE])
-
 setMethod('[', signature(x='dmatrix', i='numeric', j='missing', drop='logical'),
   function(x, i, drop) {
     if (ncol(x) <= options()$col_part_size) {
@@ -84,6 +81,10 @@ setMethod('[', signature(x='dmatrix', i='numeric', j='missing', drop='logical'),
       }
     }
   })
+
+setMethod('[', signature(x='dmatrix', i='numeric', j='missing', drop='missing'),
+  function(x, i) x[i, drop=TRUE])
+
 
 setMethod("[", signature(x="dmatrix", i="missing", j="numeric", drop="missing"),
   function(x, j) x[,j,drop=TRUE])
@@ -123,7 +124,7 @@ setMethod("[", signature(x="dmatrix", i="numeric", j="numeric", drop="missing"),
   function(x, i, j) x[i,j,drop=TRUE])
 
 setMethod("[", signature(x="dmatrix", i="numeric", j="numeric", drop="logical"),
-  function(x, i, j) {
+  function(x, i, j, drop) {
     ret = Matrix(as.numeric(NA), nrow=length(unique(i)), 
                  ncol=length(unique(j)) )
     if (!is.null(rownames(x)))
