@@ -1,22 +1,27 @@
 source("part-api.r")
 
-cass_insert(key, value) {
+as_cass_part = function(x) {
+  ret = list(key=guid())
+  class(ret) = c(class(ret), "cassandra_part")
+  cass_insert(ret$key, serialize(x, NULL))
+  ret
+}
+
+init_cassandra_part = function() {
+  options(default_part_constructor=as_cass_part)
+  TRUE
+}
+
+cass_insert = function(key, value) {
   iq = casslite::cl.prepare("insert into test.block (key, v) values (?, ?)")
   insert = function(key, value) casslite::cl.execute(iq, 0, key, value)
   insert(key, value)
 }
 
-cass_retrieve(key) {
+cass_retrieve = function(key) {
   q = casslite::cl.prepare("select v from test.block where key=?")
   query = function(key) casslite::cl.execute(q, -1, key)
-  query(part)
-}
-
-as_cass_part = function(x) {
-  ret = list(key=guid())
-  class(ret) = c(class(ret), "cassandra_part")
-  cass_insert(ret$key, serialize(x))
-  ret
+  query(key)
 }
 
 get_values.cassandra_part = function(part, i, ...) {
