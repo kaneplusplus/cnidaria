@@ -1,6 +1,7 @@
 library(testthat)
 
-source("disk-part.r")
+#source("disk-part.r")
+source("cassandra-part.r")
 source("dmatrix.r")
 
 # We'll use doSEQ as a parallel execution engine.
@@ -8,7 +9,8 @@ library(foreach)
 registerDoSEQ()
 
 # and disk parts for the data manager.
-init_disk_part()
+#init_disk_part()
+init_cassandra_part()
 
 # Chunks for an irregular matrix.
 l = list(matrix(rnorm(25), nrow=5, ncol=5),
