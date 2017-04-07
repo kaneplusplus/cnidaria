@@ -22,6 +22,8 @@ get_typeof = function(part) UseMethod("get_typeof", part)
 
 get_class = function(part) UseMethod("get_class", part)
 
+delete_part(part) UseMethod("delete_part", part)
+
 
 ############################
 # Chunk constructor function
