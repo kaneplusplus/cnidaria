@@ -14,14 +14,14 @@ source("dvector.r")
 init_disk_part()
 
 # Create the vector.
-dv = dvector_from_vectors(list(rnorm(10), rnorm(20), rnorm(15)))
+dv <- dvector_from_vectors(list(rnorm(10), rnorm(20), rnorm(15)))
 class(dv)
 
-dv_sparse = dvector_from_vectors(list(rnorm(10), 
+dv_sparse <- dvector_from_vectors(list(rnorm(10), 
   sparseVector(1:2, 4:5, 15), rnorm(20)))
 
 # Sample a few element positions.
-inds = sample.int(length(dv), 10, replace=TRUE)
+inds <- sample.int(length(dv), 10, replace=TRUE)
 
 # Emerge the vector at the specified indices and see if it's
 # the same same as emerging the entire vector and then
@@ -29,12 +29,12 @@ inds = sample.int(length(dv), 10, replace=TRUE)
 expect_equal(dv[inds], dv[][inds])
 
 # Add one to each element of the vector.
-dv2 = dv + 1
+dv2 <- dv + 1
 
 # Make sure it's the same as emerging dv and then adding 1.
 expect_equal(dv2[], (dv+1)[])
 
-dv_index = dvector_from_vectors(list(inds, inds))
+dv_index <- dvector_from_vectors(list(inds, inds))
 
 expect_equal(dv[dv_index][], dv[][dv_index[]])
 

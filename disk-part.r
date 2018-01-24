@@ -5,16 +5,16 @@ source("part-api.r")
 #######################################
 
 # This will be a method that implements as_part.
-as_disk_part = function(x) {
-  ret = list(file_path=file.path(options()$disk_part_dir, guid()))
-  con = file(ret$file_path, open="wb", blocking=FALSE)
+as_disk_part <- function(x) {
+  ret <- list(file_path=file.path(options()$disk_part_dir, guid()))
+  con <- file(ret$file_path, open="wb", blocking=FALSE)
   serialize(x, con)
   close(con)
-  class(ret) = c(class(ret), "disk_part")
+  class(ret) <- c(class(ret), "disk_part")
   ret
 }
 
-init_disk_part = function(part_dir=tempdir()) {
+init_disk_part <- function(part_dir=tempdir()) {
   # Create a new environment if it doesn't already exist.
   options(disk_part_dir=part_dir)
   options(default_part_constructor=as_disk_part)
@@ -25,9 +25,9 @@ init_disk_part = function(part_dir=tempdir()) {
 # The disk_part method definitions.
 ########################################
 
-get_values.disk_part = function(part, i, ...) {
-  con = file(part$file_path, open="rb", blocking=FALSE)
-  x = unserialize(con)
+get_values.disk_part <- function(part, i, ...) {
+  con <- file(part$file_path, open="rb", blocking=FALSE)
+  x <- unserialize(con)
   close(con)
   if (!missing(i) && !missing(...)) {
     x[i, ...]
@@ -40,9 +40,9 @@ get_values.disk_part = function(part, i, ...) {
   }
 }
 
-get_attributes.disk_part = function(part, labels) {
-  con = file(part$file_path, open="rb", blocking=FALSE)
-  x = unserialize(con)
+get_attributes.disk_part <- function(part, labels) {
+  con <- file(part$file_path, open="rb", blocking=FALSE)
+  x <- unserialize(con)
   close(con)
   if (missing(labels)) {
     attributes(x)
@@ -51,24 +51,27 @@ get_attributes.disk_part = function(part, labels) {
   }
 }
 
-get_object_size.disk_part = function(part) {
-  con = file(part$file_path, open="rb", blocking=FALSE)
-  x = unserialize(con)
+get_object_size.disk_part <- function(part) {
+  con <- file(part$file_path, open="rb", blocking=FALSE)
+  x <- unserialize(con)
   close(con)
   object.size(x)
 }
 
-get_typeof.disk_part = function(part) {
-  con = file(part$file_path, open="rb", blocking=FALSE)
-  x = unserialize(con)
+get_typeof.disk_part <- function(part) {
+  con <- file(part$file_path, open="rb", blocking=FALSE)
+  x <- unserialize(con)
   close(con)
   typeof(x)
 }
 
-get_class.disk_part = function(part) {
-  con = file(part$file_path, open="rb", blocking=FALSE)
-  x = unserialize(con)
+get_class.disk_part <- function(part) {
+  con <- file(part$file_path, open="rb", blocking=FALSE)
+  x <- unserialize(con)
   close(con)
   class(x)
 }
 
+delete_part.disk_part <- function(part) {
+  file.remove(part$file_path)
+}

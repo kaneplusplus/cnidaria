@@ -1,7 +1,8 @@
-source("cassandra-part.r")
+
+source("s3-part.r")
 
 # Initialize disk parting.
-init_cassandra_part()
+init_disk_part()
 
 # Create a new part from a matrix.
 a <- as_part(matrix(1:10, ncol=2))

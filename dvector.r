@@ -5,8 +5,9 @@ source("params.r")
 
 setClass('dvector', representation(e='environment'))
 
-dvector = function(parts, lengths) {
-  e = new.env(parent=emptyenv())
+# Set this to identity if you don't want deletion.
+dvector <- function(parts, lengths, finalizer=delete_finalizer) {
+  e <- new.env(parent=emptyenv())
   assign('parts', parts, envir=e)
   assign('lengths', lengths, envir=e)
   assign('length', sum(lengths), envir=e)
@@ -15,9 +16,9 @@ dvector = function(parts, lengths) {
 
 # TODO: Add code to make sure factors levels are normalized across
 # the passed vectors.
-dvector_from_vectors = function(l, part_constructor) {
+dvector_from_vectors <- function(l, part_constructor) {
   if (missing(part_constructor)) 
-    part_constructor = options()$default_part_constructor
+    part_constructor <- options()$default_part_constructor
   if (any(!sapply(l, function(x) {is.vector(x) ||
                                   inherits(x, "sparseVector")}))) {
     stop("All supplied objects must be vectors.")
@@ -36,10 +37,10 @@ setMethod("[",
 setMethod('[',
   signature(x='dvector', i="numeric"),
   function(x, i) {
-    ret = rep(NA, length(i))
-    ci = convert_indices(x@e$lengths, i)
+    ret <- rep(NA, length(i))
+    ci <- convert_indices(x@e$lengths, i)
     for (cn in unique(ci[,'part'])) {
-      ret[ci[,'part'] == cn] = as.vector(get_values(x@e$parts[[cn]], 
+      ret[ci[,'part'] == cn] <- as.vector(get_values(x@e$parts[[cn]], 
         ci[ci[,'part']==cn, 'index']))
     }
     ret
@@ -63,10 +64,10 @@ setMethod("Arith", signature(e1='dvector', e2='numeric'),
   function(e1, e2) {
     op = .Generic[[1]]
     if (length(e2) == 1) {
-      parts = foreach(part = e1@e$parts) %dopar% {
+      parts <- foreach(part = e1@e$parts) %dopar% {
         as_part(do.call(op, list(get_values(part), e2)))
       }
-      e=new.env(parent=emptyenv())
+      e <- new.env(parent=emptyenv())
       assign("parts", parts, envir=e)
       assign("length", e1@e$length, envir=e)
       assign("lengths", e1@e$lengths, envir=e)
@@ -75,10 +76,4 @@ setMethod("Arith", signature(e1='dvector', e2='numeric'),
       e2[] + e1
     }
   })
-
-#Ops.dvector = function(e1, e2) {
-#  FUN = get(.Generic, envir = parent.frame(), mode = "function")
-#  if (class(e2) == "numeric" && length(e2) == 1)
-#    dvector(foreach(part = e1$parts) %dopar% FUN(get_values(part), e2))
-#}
 
