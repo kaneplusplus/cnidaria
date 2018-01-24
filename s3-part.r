@@ -2,23 +2,21 @@ library(aws.s3)
 
 source("part-api.r")
 
-init_s3_part <- function(url, bucket_name) {
+init_s3_part <- function(bucket_name) {
   options(default_part_constructor=as_s3_part)
-  options(s3_base_url=url)
   options(s3_bucket_name=bucket_name)
   invisible(TRUE)
 }
 
 # This should be changed so parts can be stored at different urls.
 as_s3_part <- function(x, ...) {
-  ret <- list(url=options()$s3_base_url, bucket=options()$s3_bucket_name,
-              file_name=guid())
+  ret <- list(bucket=options()$s3_bucket_name, file_name=guid())
   class(ret) <- c(class(ret), "s3.part")
   put_object(serialize(x, NULL), ret$file_name, ret$bucket, ...)
   ret
 }
 
-s3_retrieve(file_name, bucket_name, ...) {
+s3_retrieve <- function(file_name, bucket_name, ...) {
   unserialize(get_object(file_name, bucket_name, ...))
 }
 
