@@ -18,7 +18,7 @@ as_s3_part <- function(x, ...) {
   ret
 }
 
-s3_retrieve(file_name, bucket_name, ...) {
+s3_retrieve <- function(file_name, bucket_name, ...) {
   unserialize(get_object(file_name, bucket_name, ...))
 }
 
