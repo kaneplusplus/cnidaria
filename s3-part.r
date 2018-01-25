@@ -10,9 +10,9 @@ init_s3_part <- function(bucket_name) {
 
 # This should be changed so parts can be stored at different urls.
 as_s3_part <- function(x, ...) {
-  ret <- list(bucket=options()$s3_bucket_name, file_name=guid())
+  ret <- list(bucket_name=options()$s3_bucket_name, file_name=guid())
   class(ret) <- c(class(ret), "s3.part")
-  put_object(serialize(x, NULL), ret$file_name, ret$bucket, ...)
+  put_object(serialize(x, NULL), ret$file_name, ret$bucket_name, ...)
   ret
 }
 
@@ -20,9 +20,9 @@ s3_retrieve <- function(file_name, bucket_name, ...) {
   unserialize(get_object(file_name, bucket_name, ...))
 }
 
-get_value.s3.part <- function(part, i) {
+get_values.s3.part <- function(part, i, ...) {
   # TODO: add other relevant parameters.
-  x <- s3_retrieve(part$key, part$buket_name)
+  x <- s3_retrieve(part$file_name, part$bucket_name)
   if (!missing(i) && !missing(...)) {
     x[i, ...]
   } else if (missing(i) && !missing(...)) {
@@ -35,7 +35,7 @@ get_value.s3.part <- function(part, i) {
 }
 
 get_attributes.s3.part <- function(part, labels) {
-  x <- s3_retrieve(part$key, part$bucket_name)
+  x <- s3_retrieve(part$file_name, part$bucket_name)
   if (missing(labels)) {
     attributes(x)
   } else {
@@ -44,19 +44,19 @@ get_attributes.s3.part <- function(part, labels) {
 }
 
 get_object_size.s3.part <- function(part) {
-  object.size(s3_retrieve(part$key, part$bucket_name))
+  object.size(s3_retrieve(part$file_name, part$bucket_name))
 }
 
 get_typeof.s3.part <- function(part) {
-  typeof(s3_retrieve(part$key, part$bucket_name))
+  typeof(s3_retrieve(part$file_name, part$bucket_name))
 }
 
 get_class.s3.part <- function(part) {
-  class(s3_retrieve(part$key, part$bucket_name))
+  class(s3_retrieve(part$file_name, part$bucket_name))
 }
 
 delete_part.s3.part <- function(part) {
-  delete_object(part$key, part$bucket_name)
+  delete_object(part$file_name, part$bucket_name)
 }
 
 
